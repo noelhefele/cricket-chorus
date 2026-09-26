@@ -1,6 +1,6 @@
 # Cricket Chorus — Design (living spec)
 
-**Concept:** Noel's colleague, who originated the idea. **Implementation help:** Noel.
+**Concept:** Alex Byrn, who originated the idea. **Implementation help:** Noel.
 Edit this file as the design changes; record the *why* of each change in
 [DECISIONS.md](DECISIONS.md).
 

@@ -8,14 +8,14 @@ old one.
 
 ## 2026-09-26 — Project start
 
-- **The concept comes from Noel's colleague.** Noel is helping build it. See
+- **The concept is Alex Byrn's.** Noel is helping build it. See
   [DESIGN.md](DESIGN.md).
 - **Web app, not a native app.** Both phones just open a URL. No install, no
   App Store.
-- **iOS Safari is the main target**, because the colleague uses an iPhone.
-- **You only need a link to take part.** The colleague may not have a GitHub
+- **iOS Safari is the main target**, because Alex uses an iPhone.
+- **You only need a link to take part.** Alex may not have a GitHub
   account. He must be able to open the link, run a test, and send the log.
-  Noel holds the repo. The colleague can join it later.
+  Noel holds the repo. Alex can join it later.
 - **Hosting is GitHub Pages under Noel's account.** It provides the HTTPS
   that browsers need before they allow microphone access.
 - **This is its own repo** (`cricket-chorus`). It is not part of any other

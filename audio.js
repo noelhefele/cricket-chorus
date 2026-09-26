@@ -56,8 +56,14 @@ export class AudioEngine {
       src.connect(this.detector).connect(sink).connect(this.ctx.destination);
     }
     this.setParams(params);
-    this.sampleClock();
-    if (!this.clockTimer) this.clockTimer = setInterval(() => this.sampleClock(), 50);
+    if (!this.clockTimer) {
+      // currentTime is erratic while a new context starts up; let it settle
+      // before trusting it for the audio -> performance.now() mapping.
+      await new Promise(r => setTimeout(r, 300));
+      this.offsets = [];
+      this.sampleClock();
+      this.clockTimer = setInterval(() => this.sampleClock(), 50);
+    }
   }
 
   detectorParams(p) {

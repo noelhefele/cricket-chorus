@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1d3b2a">
+<title>Cricket Chorus</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Cricket Chorus</h1>
+  <span class="ver">v0</span>
+</header>
+
+<main>
+  <section class="card">
+    <label class="field">Phone name
+      <input id="device" autocomplete="off" autocapitalize="off" spellcheck="false">
+    </label>
+
+    <div class="roles" role="radiogroup" aria-label="Role">
+      <button data-role="emitter" role="radio">Emitter</button>
+      <button data-role="responder" role="radio">Responder</button>
+      <button data-role="calibrate" role="radio">Calibrate</button>
+    </div>
+    <p id="role-help" class="help"></p>
+
+    <button id="start" class="big">Start</button>
+
+    <div class="lights">
+      <span><i id="light-heard"></i>heard</span>
+      <span><i id="light-chirp"></i>chirp</span>
+      <span id="status" class="status">Stopped</span>
+    </div>
+    <p id="banner" class="banner" hidden></p>
+  </section>
+
+  <section class="card">
+    <div class="meter-head">
+      <span>Microphone level (chirp band)</span>
+      <span id="meter-value">–</span>
+    </div>
+    <div class="meter"><div id="meter-bar"></div><div id="meter-thr"></div></div>
+    <button id="autothr" class="small">Auto-set threshold (keep the room quiet)</button>
+    <p class="help" id="cal-info"></p>
+    <p class="help" id="wake-info"></p>
+  </section>
+
+  <details class="card" id="settings">
+    <summary>Settings</summary>
+    <div id="params"></div>
+    <button id="reset" class="small">Reset to defaults</button>
+  </details>
+
+  <section class="card">
+    <div class="log-head">
+      <strong>Log</strong> <span id="log-count"></span>
+    </div>
+    <div class="log-buttons">
+      <button id="share">Share log</button>
+      <button id="copy">Copy log</button>
+      <button id="clear" class="quiet">Clear</button>
+    </div>
+    <pre id="log"></pre>
+  </section>
+</main>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

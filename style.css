@@ -1,0 +1,89 @@
+:root {
+  --bg: #f3f1ea;
+  --card: #ffffff;
+  --text: #1b1f1c;
+  --muted: #5f6861;
+  --accent: #1d6b3f;
+  --accent-text: #ffffff;
+  --line: #d9d6cc;
+  --heard: #1faa55;
+  --chirp: #e8891d;
+  --stop: #b3261e;
+  --meter-bg: #e6e3da;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111512;
+    --card: #1b211d;
+    --text: #e8ece9;
+    --muted: #9aa59d;
+    --accent: #3fae6c;
+    --accent-text: #08120c;
+    --line: #2d3530;
+    --meter-bg: #2a312c;
+  }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+}
+header {
+  display: flex; align-items: baseline; gap: 8px;
+  padding: 16px 16px 4px; max-width: 560px; margin: 0 auto;
+}
+h1 { font-size: 22px; margin: 0; }
+.ver { color: var(--muted); font-size: 13px; }
+main { max-width: 560px; margin: 0 auto; padding: 8px 16px 32px; }
+.card {
+  background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+  padding: 14px; margin-bottom: 12px;
+}
+button {
+  font: inherit; color: var(--text); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+  -webkit-tap-highlight-color: transparent; cursor: pointer;
+}
+button:active { filter: brightness(0.92); }
+button:disabled { opacity: 0.5; }
+.field { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--muted); }
+input {
+  font: inherit; font-size: 16px; color: var(--text); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; width: 100%;
+}
+.roles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 12px; }
+.roles button[aria-checked="true"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+.help { color: var(--muted); font-size: 14px; margin: 8px 0 0; }
+.big {
+  width: 100%; margin-top: 12px; padding: 16px; font-size: 20px; font-weight: 700;
+  background: var(--accent); color: var(--accent-text); border-color: var(--accent);
+}
+.big.running { background: var(--stop); border-color: var(--stop); color: #fff; }
+.small { font-size: 14px; padding: 8px 10px; margin-top: 10px; width: 100%; }
+.lights { display: flex; align-items: center; gap: 14px; margin-top: 12px; font-size: 14px; color: var(--muted); flex-wrap: wrap; }
+.lights span { display: inline-flex; align-items: center; gap: 6px; }
+.lights i { width: 14px; height: 14px; border-radius: 50%; background: var(--meter-bg); display: inline-block; transition: background 0.3s; }
+#light-heard.on { background: var(--heard); transition: none; }
+#light-chirp.on { background: var(--chirp); transition: none; }
+.status { margin-left: auto; color: var(--text); }
+.banner { background: #fff3cd; color: #5c4400; border-radius: 8px; padding: 8px 10px; font-size: 14px; margin: 10px 0 0; }
+.meter-head, .log-head { display: flex; justify-content: space-between; font-size: 14px; color: var(--muted); }
+.log-head strong { color: var(--text); }
+.meter { position: relative; height: 18px; background: var(--meter-bg); border-radius: 9px; overflow: hidden; margin-top: 6px; }
+#meter-bar { height: 100%; width: 0; background: var(--heard); }
+#meter-thr { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--stop); }
+summary { font-weight: 600; cursor: pointer; }
+#params h3 { font-size: 14px; color: var(--muted); margin: 14px 0 4px; font-weight: 600; }
+.param { display: grid; grid-template-columns: 1fr 110px; align-items: center; gap: 8px; padding: 4px 0; font-size: 15px; }
+.param small { display: block; color: var(--muted); font-size: 12px; }
+.log-buttons { display: grid; grid-template-columns: 1fr 1fr auto; gap: 6px; margin: 8px 0; }
+.quiet { color: var(--muted); }
+pre#log {
+  font: 12px/1.4 ui-monospace, Menlo, monospace; margin: 0; max-height: 260px; overflow: auto;
+  white-space: pre-wrap; word-break: break-all; color: var(--muted);
+}

@@ -6,7 +6,7 @@ phones: one calls, the other answers. Later we want many phones calling
 together, to see whether patterns appear, such as chirping in sync or taking
 turns.
 
-The idea is Noel's colleague's. Noel is helping build it. The details are in
+The idea is Alex Byrn's. Noel is helping build it. The details are in
 [DESIGN.md](DESIGN.md).
 
 ## What you need

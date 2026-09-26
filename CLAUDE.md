@@ -3,11 +3,11 @@
 Phones act as cricket agents: listen → detect chirp → response rule →
 chirp → refractory period. Every event is logged as JSON Lines.
 
-- **People:** the concept is Noel's colleague's (he's on an iPhone and may
+- **People:** the concept is Alex Byrn's (he's on an iPhone and may
   not use GitHub). Noel owns the repo (`noelhefele/cricket-chorus`, private)
   and does most of the implementation. They work async.
 - **Live app:** https://noelhefele.github.io/cricket-chorus/ (GitHub Pages
-  from `main`, root). Every push to `main` deploys. The colleague only ever
+  from `main`, root). Every push to `main` deploys. Alex only ever
   uses this link, so keep `main` working.
 - **Main target is iOS Safari.** Audio starts only from a tap. getUserMedia
   runs with echoCancellation, noiseSuppression and autoGainControl off. The
