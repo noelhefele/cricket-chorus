@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Detector self-test</title>
+<style>
+  body { font: 15px/1.5 system-ui, sans-serif; margin: 16px; background: #fff; color: #111; }
+  .pass { color: #0a7a2f; } .fail { color: #b00020; }
+  pre { white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<h1>Detector self-test</h1>
+<p>Renders synthetic chirps offline, runs them through the real detector worklet and checks the timing.</p>
+<pre id="out">Running…</pre>
+<script type="module">
+import { renderChirp } from '../audio.js';
+
+const SR = 48000;
+const P = { carrier_hz: 4500, pulse_count: 3, pulse_ms: 20, pulse_period_ms: 40, volume: 0.1, filter_q: 6, threshold_db: -45 };
+const out = document.getElementById('out');
+const lines = [];
+const log = (s) => { lines.push(s); out.textContent = lines.join('\n'); };
+
+async function run({ chirps = [], noiseDb = -60, offband = null, mutes = [], dur = 3 }) {
+  const ctx = new OfflineAudioContext(1, SR * dur, SR);
+  await ctx.audioWorklet.addModule('../detector-worklet.js');
+  const det = new AudioWorkletNode(ctx, 'chirp-detector', {
+    numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1],
+    processorOptions: { carrierHz: P.carrier_hz, q: P.filter_q, thresholdDb: P.threshold_db, holdMs: 130 },
+  });
+  const found = [];
+  det.port.onmessage = (e) => { if (e.data.type === 'detect') found.push(e.data); };
+  for (const m of mutes) det.port.postMessage({ type: 'mute', from: m[0], until: m[1] });
+  det.connect(ctx.destination);
+
+  // White noise at the requested RMS level.
+  const nb = ctx.createBuffer(1, SR * dur, SR);
+  const nd = nb.getChannelData(0);
+  const a = Math.pow(10, noiseDb / 20) * Math.sqrt(3);
+  for (let i = 0; i < nd.length; i++) nd[i] = a * (2 * Math.random() - 1);
+  const ns = ctx.createBufferSource(); ns.buffer = nb; ns.connect(det); ns.start(0);
+
+  const chirp = renderChirp(SR, P);
+  for (const t of chirps) { const s = ctx.createBufferSource(); s.buffer = chirp; s.connect(det); s.start(t); }
+  if (offband) {
+    const o = ctx.createOscillator(); o.frequency.value = offband.hz;
+    const g = ctx.createGain(); g.gain.value = offband.amp;
+    o.connect(g).connect(det); o.start(offband.t); o.stop(offband.t + 0.1);
+  }
+  await ctx.startRendering();
+  await new Promise(r => setTimeout(r, 200)); // let port messages drain
+  return found;
+}
+
+const results = [];
+function check(name, ok, detail) {
+  results.push({ name, ok, detail });
+  log(`${ok ? 'PASS' : 'FAIL'}  ${name}\n      ${detail}`);
+}
+
+const truth = [0.5, 1.2, 2.0];
+let f = await run({ chirps: truth });
+const errs = f.map((d, i) => ((d.tAudio - truth[i]) * 1000));
+check('three chirps -> three detections', f.length === 3, `got ${f.length}`);
+check('onset error under 2 ms', f.length === 3 && errs.every(e => e >= -0.5 && e < 2),
+  `errors ms: ${errs.map(e => e.toFixed(2)).join(', ')}; levels dB: ${f.map(d => d.level.toFixed(1)).join(', ')}`);
+
+f = await run({ chirps: truth, mutes: [[1.1, 1.4]] });
+check('mute window hides the middle chirp', f.length === 2 && Math.abs(f[1].tAudio - 2.0) < 0.01, `got ${f.map(d => d.tAudio.toFixed(3)).join(', ')}`);
+
+f = await run({ offband: { hz: 1000, t: 1.0, amp: 0.3 } });
+check('loud 1 kHz tone is ignored', f.length === 0, `got ${f.length}`);
+
+f = await run({ chirps: [1.0], noiseDb: -40 });
+check('noisy room (-40 dB white noise): chirp found, no false alarms', f.length === 1 && Math.abs(f[0].tAudio - 1.0) < 0.003, `got ${f.map(d => d.tAudio.toFixed(4)).join(', ')}`);
+
+const pass = results.every(r => r.ok);
+log(`\n${pass ? 'ALL PASS' : 'SOME FAILED'}`);
+out.className = pass ? 'pass' : 'fail';
+window.testResults = results;
+</script>
+</body>
+</html>
