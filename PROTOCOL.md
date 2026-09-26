@@ -45,6 +45,9 @@ are written when their time arrives.
 **`config`**: written at the start of every run, and again whenever a
 setting changes during a run.
 - `params`: all on-screen settings (see below)
+- `app`: which code produced the log: `version` (hand-bumped, e.g.
+  `0.1.0`), `commit` (short git SHA stamped at deploy, or `dev` when run
+  locally), `built` (deploy time, ISO-8601 UTC, or `null`)
 - `device_info`: `user_agent`, `sample_rate`, `base_latency`,
   `output_latency`, `audio_session`, `mic_settings` (what the browser
   actually applied, from `MediaStreamTrack.getSettings()`)

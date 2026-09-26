@@ -3,6 +3,17 @@ import { AudioEngine, chirpDurationMs } from './audio.js';
 import { respond } from './rules.js';
 
 const PROTOCOL_VERSION = 1;
+// Bump APP_VERSION when behaviour changes (detector, rules, timing).
+// COMMIT and BUILT are filled in by the deploy workflow; locally they stay
+// as placeholders and the app reports "dev".
+const APP_VERSION = '0.1.0';
+const COMMIT = '__COMMIT__';
+const BUILT = '__BUILT__';
+const APP = {
+  version: APP_VERSION,
+  commit: COMMIT.startsWith('__') ? 'dev' : COMMIT,
+  built: BUILT.startsWith('__') ? null : BUILT,
+};
 
 const DEFAULTS = {
   carrier_hz: 4500,
@@ -119,6 +130,7 @@ function saveLogSoon() {
 function logConfig() {
   log('config', engine.now, {
     params: { ...S.params },
+    app: APP,
     device_info: engine.deviceInfo(),
     calibration: S.calibration,
   });
@@ -491,6 +503,7 @@ function showBanner(t) { $('banner').textContent = t; $('banner').hidden = false
 function hideBanner() { $('banner').hidden = true; }
 
 // ---------- wire up ----------
+$('app-ver').textContent = `v${APP.version} · ${APP.commit}`;
 $('device').value = S.device;
 $('device').addEventListener('change', () => {
   S.device = $('device').value.trim() || S.device;

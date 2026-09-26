@@ -47,3 +47,19 @@ old one.
   device names, timestamps and the phone's browser user agent. Name phones
   by role, such as `alex-iphone`, not by anything more personal.
 - **GitHub Pages serves `main` from the repo root.** Every push deploys.
+
+## 2026-09-26 — Logs record the app version
+
+- **Every `config` event carries `app: {version, commit, built}`.** The live
+  app changes on every push, so a log must say which code produced it.
+  `version` is bumped by hand when behaviour changes. `commit` and `built`
+  are stamped automatically.
+- **Pages now deploys through a GitHub Actions workflow**
+  (`.github/workflows/pages.yml`) instead of straight from the branch. This
+  supersedes "GitHub Pages serves `main` from the repo root" (entry above).
+  The workflow is what writes the commit into `app.js`. There is still no
+  build step to run locally.
+- The version also shows next to the title in the app, so Alex can tell
+  which build he has.
+- Caveat: Safari can serve cached files for up to 10 minutes after a deploy.
+  During that window the stamp can be one deploy old.

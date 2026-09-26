@@ -7,8 +7,10 @@ chirp → refractory period. Every event is logged as JSON Lines.
   not use GitHub). Noel owns the repo (`noelhefele/cricket-chorus`, public so that
   free GitHub Pages works; logs in `runs/` are public)
   and does most of the implementation. They work async.
-- **Live app:** https://noelhefele.github.io/cricket-chorus/ (GitHub Pages
-  from `main`, root). Every push to `main` deploys. Alex only ever
+- **Live app:** https://noelhefele.github.io/cricket-chorus/ (GitHub Pages,
+  deployed by `.github/workflows/pages.yml` on every push to `main`; it
+  stamps the commit into `app.js`). Bump `APP_VERSION` in `app.js` when
+  behaviour changes. Alex only ever
   uses this link, so keep `main` working.
 - **Main target is iOS Safari.** Audio starts only from a tap. getUserMedia
   runs with echoCancellation, noiseSuppression and autoGainControl off. The
