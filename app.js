@@ -150,6 +150,7 @@ function onDetect(m) {
     muted: false,
     pending: S.pending,
   });
+  if (S.role === 'calibrate' && S.cal) S.cal.dets.push(m);
   if (S.role === 'responder') {
     const delay = respond({ seq: det.seq, t_audio: m.tAudio, level_db: m.level },
       { pending: S.pending, lastEmitAudio: S.lastEmitAudio }, S.params);
@@ -175,6 +176,62 @@ function startEmitter() {
   tick();
 }
 
+// Calibration: chirp to ourselves (no refractory) and time how long each
+// chirp takes to come back through the phone's own microphone. This is the
+// loopback latency, output + input (see DESIGN.md, Timing and latency).
+const CAL_N = 6, CAL_SPACING = 0.7, CAL_WINDOW = 0.4;
+
+function startCalibration() {
+  S.cal = { emits: [], dets: [] };
+  const first = engine.now + 0.5;
+  for (let i = 0; i < CAL_N; i++) {
+    const t = engine.chirpAt(first + i * CAL_SPACING);
+    S.cal.emits.push(t);
+    S.nEmit++;
+    logAt(t, 'emit', { cause: 'calibration', in_response_to: null, decided_t_audio: round(engine.now, 6) });
+    later(engine.delayUntil(t), () => flash('light-chirp'));
+  }
+  later(engine.delayUntil(S.cal.emits[CAL_N - 1] + CAL_WINDOW + 0.2), finishCalibration);
+}
+
+function finishCalibration() {
+  const { emits, dets } = S.cal;
+  const lat = [], levels = [];
+  for (const e of emits) {
+    const d = dets.find(d => d.tAudio >= e && d.tAudio < e + CAL_WINDOW);
+    lat.push(d ? round((d.tAudio - e) * 1000, 2) : null);
+    if (d) levels.push(d.level);
+  }
+  const ok = lat.filter(x => x != null).sort((a, b) => a - b);
+  const median = (a) => a.length ? (a.length % 2 ? a[a.length >> 1] : (a[a.length / 2 - 1] + a[a.length / 2]) / 2) : null;
+  const result = {
+    latencies_ms: lat,
+    median_ms: round(median(ok), 2),
+    min_ms: ok.length ? ok[0] : null,
+    max_ms: ok.length ? ok[ok.length - 1] : null,
+    n_ok: ok.length,
+    n_total: CAL_N,
+    level_db: round(median(levels.sort((a, b) => a - b)), 1),
+  };
+  log('calibration', engine.now, result);
+  if (ok.length >= 3) {
+    S.calibration = { ...result, device: S.device, wall: new Date().toISOString() };
+    store.set('calibration', S.calibration);
+  } else {
+    showBanner(`Calibration heard only ${ok.length} of ${CAL_N} chirps. Check that the volume is up and silent mode is off, tap Auto-set threshold in a quiet room, and try again.`);
+  }
+  S.cal = null;
+  renderCalibration();
+  stop();
+}
+
+function renderCalibration() {
+  const c = S.calibration;
+  $('cal-info').textContent = c
+    ? `Loopback latency: ${c.median_ms} ms (${c.n_ok}/${c.n_total}, spread ${round(c.max_ms - c.min_ms, 1)} ms) · calibrated ${c.wall.slice(0, 10)}`
+    : 'Not calibrated yet: run Calibrate once on this phone.';
+}
+
 // ---------- run control ----------
 async function start() {
   const btn = $('start');
@@ -195,6 +252,7 @@ async function start() {
   logConfig();
   keepAwake();
   if (S.role === 'emitter') startEmitter();
+  else if (S.role === 'calibrate') startCalibration();
   renderRunning();
 }
 
@@ -206,6 +264,7 @@ function stop() {
   log('run_end', engine.now, { n_detect: S.nDetect, n_emit: S.nEmit });
   S.running = false;
   S.pending = false;
+  S.cal = null;
   store.set('log', S.lines); store.set('seq', S.seq);
   releaseWake();
   renderRunning();
@@ -237,6 +296,7 @@ async function keepAwake() {
 function releaseWake() {
   if (wakeLock) wakeLock.release().catch(() => {});
   wakeLock = null;
+  $('wake-info').textContent = '';
 }
 document.addEventListener('visibilitychange', () => {
   if (!S.running) return;
@@ -457,5 +517,6 @@ for (const l of S.lines.slice(-150)) { try { renderLog(JSON.parse(l)); } catch {
 renderLog();
 renderParams();
 renderMeterThreshold();
+renderCalibration();
 renderRunning();
 checkTiming();
