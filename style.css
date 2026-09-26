@@ -39,6 +39,7 @@ header {
 }
 h1 { font-size: 22px; margin: 0; }
 .ver { color: var(--muted); font-size: 13px; }
+.help-link { margin-left: auto; color: var(--accent); font-size: 15px; font-weight: 600; text-decoration: none; padding: 6px 0; }
 main { max-width: 560px; margin: 0 auto; padding: 8px 16px 32px; }
 .card {
   background: var(--card); border: 1px solid var(--line); border-radius: 14px;
