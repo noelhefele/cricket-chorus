@@ -4,7 +4,8 @@ Phones act as cricket agents: listen → detect chirp → response rule →
 chirp → refractory period. Every event is logged as JSON Lines.
 
 - **People:** the concept is Alex Byrn's (he's on an iPhone and may
-  not use GitHub). Noel owns the repo (`noelhefele/cricket-chorus`, private)
+  not use GitHub). Noel owns the repo (`noelhefele/cricket-chorus`, public so that
+  free GitHub Pages works; logs in `runs/` are public)
   and does most of the implementation. They work async.
 - **Live app:** https://noelhefele.github.io/cricket-chorus/ (GitHub Pages
   from `main`, root). Every push to `main` deploys. Alex only ever

@@ -37,3 +37,13 @@ old one.
 - **iOS microphone setup:** echoCancellation, noiseSuppression and
   autoGainControl are all off. Audio starts only from a tap. The screen is
   kept awake during a run with the Wake Lock API.
+
+## 2026-09-26 — Repo made public
+
+- **The repo is public.** This supersedes "private repo" from the project
+  start. GitHub's free plan only serves Pages from public repos. The app is a
+  website, so its code is visible anyway. The repo holds no secrets.
+  **Consequence: committed run logs in `runs/` are public.** They contain
+  device names, timestamps and the phone's browser user agent. Name phones
+  by role, such as `alex-iphone`, not by anything more personal.
+- **GitHub Pages serves `main` from the repo root.** Every push deploys.
