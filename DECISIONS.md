@@ -82,3 +82,14 @@ old one.
 - **Future direction noted (Alex):** agents evolving their own parameters.
   Not built. The design keeps every behaviour parameterised and logged so
   this stays possible.
+
+## 2026-09-26 — Cache-busting on deploy
+
+- **At deploy, every `.js`/`.css` reference is tagged with `?v=<commit>`.**
+  The workflow does this. Straight after the 0.2.0 deploy, a browser loaded
+  a cached old `rules.js` alongside the new `chorister.js`, and the app
+  failed to start. Tagging the references makes each deploy load as one
+  consistent set. It is still possible to see the previous version for a
+  few minutes, because `index.html` itself is cached, but not a broken mix.
+- New files must be referenced with a quoted `.js`/`.css` path so the
+  workflow's rewrite catches them.

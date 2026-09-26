@@ -28,6 +28,13 @@ jobs:
         run: |
           sed -i "s/__COMMIT__/${GITHUB_SHA::7}/; s/__BUILT__/$(date -u +%Y-%m-%dT%H:%M:%SZ)/" app.js
           grep -n "const COMMIT\|const BUILT" app.js
+      # Browsers cache files for ~10 min; without this a visit just after a
+      # deploy can mix old and new modules and break the app. Tag every
+      # .js/.css reference with the commit so each deploy is a fresh set.
+      - name: Cache-bust file references
+        run: |
+          sed -i -E "s/\.(js|css)(['\"])/.\1?v=${GITHUB_SHA::7}\2/g" *.js index.html tests/*.html
+          grep -n "?v=" *.js index.html tests/*.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
