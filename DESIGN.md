@@ -38,6 +38,7 @@ The roles in v0 are presets of this loop:
 |---|---|---|
 | Emitter | on a fixed timer (call period) | no — but it still listens and logs what it hears |
 | Responder | a detection, via the response rule | yes |
+| Chorister | its own jittered rhythm, adjusted by the coupling rule | yes, by shifting its rhythm |
 | Calibrate | a short fixed test sequence | no — measures its own latency |
 
 Because the emitter also listens, its log records the responder's reply on
@@ -88,13 +89,62 @@ export function respond(detection, state, params)
 
 v0 rule: while no response is pending, call back after `response_delay_ms`.
 
+## Chorister: rhythm plus coupling
+
+Each chorister is a noisy oscillator. When left alone, it calls every
+`call_period_ms`, and each interval is jittered by ±`jitter_pct`. Every
+phone runs the same code, and none of them is in charge.
+
+- **Effector window** (`effector_ms`): a call is locked in this long before
+  it sounds. Nothing heard after that point can stop it. This models the
+  delay between a cricket's decision to call and the sound.
+- **Coupling** (`coupling`, in `rules.js`), when a neighbour is heard outside
+  the refractory period:
+  - `reset`: inhibitory resetting (Greenfield & Roizen 1993). Hearing a call
+    restarts the countdown, and the next call comes `reset_delay_ms`
+    (jittered) after the detected onset.
+  - `none`: the control condition. The phone ignores neighbours.
+- A random starting phase stops phones that start together from being "in
+  sync" by accident.
+
+`chorister.js` holds the timing logic without any audio, so the app and the
+simulation (`tests/chorus-sim.html`) run the same code.
+
+**What the simulation predicts** (2 phones, period 2000 ms, jitter 5%,
+refractory 250 ms, about 43 ms from speaker to detector):
+
+| Reset delay | Effector 50 ms | Effector 200 ms |
+|---|---|---|
+| 800–1400 ms (0.4–0.7 × period) | alternation | alternation |
+| 2000 ms (= period) | unstable | **synchrony** |
+| 2400 ms (> period) | one phone silenced | mostly one silenced |
+| no coupling (control) | depends on start | depends on start |
+
+Two lessons for real runs:
+
+1. **Always run the control.** Over a few minutes, uncoupled phones with the
+   same period barely drift. They can look locked at whatever phase they
+   started in. A real effect gives the same pattern from different starts.
+2. **Synchrony needs an effector window longer than the hearing delay**
+   (speaker + air + microphone). Otherwise the leading phone keeps resetting
+   the other. This is why the calibration latency matters.
+
+Defaults (reset delay = period, effector 200 ms) should give synchrony.
+Changing the reset delay to 1000 ms should give alternation.
+
 ## Roadmap
 
 - v0: two phones, emitter + responder, calibration, logs shared by text or email.
-- v1: every phone is a responder with a spontaneous-call timer (a free-running
-  rhythm reset by detections). This is the classic phase-reset model for
-  synchrony or alternation.
+- v1 (done, app 0.2.0): the Chorister role, a free-running rhythm reset by
+  detections. See above.
 - v2: 3+ phones, rule comparison, automatic log merging and plots.
+- **Future (Alex):** "Ultimately the program space becomes huge and we
+  want the agents to evolve their own parameters." Each agent's settings
+  work as its genome: they're already logged per phone and per run, and the
+  rules are pluggable. Open questions: what counts as fitness (for example,
+  being heard, leading, or matching a target pattern)? Does evolution happen
+  within a run or between runs? Do phones copy settings from the neighbours
+  they hear?
 
 ## Open questions
 

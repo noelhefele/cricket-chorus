@@ -19,7 +19,8 @@ chirp → refractory period. Every event is logged as JSON Lines.
 - **No build step, no dependencies.** Plain ES modules: `app.js` (UI, log),
   `audio.js` (context, mic, chirp, scheduling), `detector-worklet.js`
   (band-pass + threshold detector, runs on the audio thread), `rules.js`
-  (the swappable response rule).
+  (swappable responder rules and chorister couplings), `chorister.js`
+  (chorister rhythm logic without audio, shared with the simulation).
 - **Specs:** DESIGN.md is the living spec. PROTOCOL.md is the log format;
   bump `v` if it changes incompatibly. DECISIONS.md is append-only and dated:
   add an entry for any design decision, and never edit old entries.
@@ -29,5 +30,8 @@ chirp → refractory period. Every event is logged as JSON Lines.
   coarse cross-device merging only. Calibration measures each phone's
   loopback latency (output + input).
 - Test the detector with `tests/detector.html` (OfflineAudioContext, runs in
-  any browser).
+  any browser). `tests/chorus-sim.html` predicts which pattern each chorister
+  setting produces. Rerun it after touching `chorister.js` or `rules.js`.
+- Future direction (Alex): agents evolve their own parameters. Keep all
+  behaviour parameterised and logged.
 - Work in small commits and push each one.

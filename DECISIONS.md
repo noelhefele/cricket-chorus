@@ -63,3 +63,22 @@ old one.
   which build he has.
 - Caveat: Safari can serve cached files for up to 10 minutes after a deploy.
   During that window the stamp can be one deploy old.
+
+## 2026-09-26 — Chorister role (app 0.2.0)
+
+- **A fourth role, Chorister**, gives each phone its own jittered rhythm that
+  a coupling rule adjusts when it hears a neighbour. The first rule is
+  inhibitory resetting (Greenfield & Roizen 1993). `none` is the control. The
+  existing roles are unchanged.
+- **Timing logic lives in `chorister.js`, separate from audio**, so the
+  simulation test runs the same code as the app.
+- **The effector window defaults to 200 ms, not 50.** The simulation showed
+  that synchrony needs this window to be longer than the speaker-to-detector
+  delay. At 50 ms the leading phone keeps resetting the other.
+- **A random starting phase, plus a mandatory control condition.**
+  Uncoupled phones with the same period can look locked for minutes, so a
+  pattern only counts if it recurs from different starts and is absent under
+  `coupling = none`.
+- **Future direction noted (Alex):** agents evolving their own parameters.
+  Not built. The design keeps every behaviour parameterised and logged so
+  this stays possible.

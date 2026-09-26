@@ -53,11 +53,11 @@ button {
 button:active { filter: brightness(0.92); }
 button:disabled { opacity: 0.5; }
 .field { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--muted); }
-input {
+input, select {
   font: inherit; font-size: 16px; color: var(--text); background: var(--bg);
   border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; width: 100%;
 }
-.roles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 12px; }
+.roles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 12px; }
 .roles button[aria-checked="true"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
 .help { color: var(--muted); font-size: 14px; margin: 8px 0 0; }
 .big {

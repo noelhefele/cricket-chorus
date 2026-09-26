@@ -53,6 +53,24 @@ Let it run for about 1 minute, then tap **Stop** on both phones.
 If phone B never answers, tap **Auto-set threshold** on phone B while the
 room is quiet, then start again.
 
+## Step 2b: Chorus test (optional)
+
+This is the real experiment. Every phone gets the same role, and each
+decides for itself when to chirp.
+
+1. Put 2 or more phones (a laptop works too) about 1 metre apart.
+2. On every one, tap **Chorister**, then **Start**.
+3. Let them run for **3 minutes**, then Stop and share the logs.
+
+With the default settings, the phones should drift into chirping
+**together**. To see whether they instead **take turns**, open Settings on
+every phone, set "Reset: next chirp this long after hearing" to **1000**,
+and run again.
+
+To check it isn't chance, repeat the run with "When it hears a neighbour" set
+to **none** on every phone. The phones then ignore each other, and any
+pattern you see is luck.
+
 ## Step 3: Send the log
 
 Tap **Share log**. Your phone's share menu opens. Choose Messages or Mail
@@ -79,7 +97,10 @@ setting is saved in the log, so you don't need to note them down.
 - Run locally: `python3 -m http.server 8000` and open
   `http://localhost:8000` (browsers allow the microphone on localhost). To
   test on a phone, use the GitHub Pages link, which provides HTTPS.
-- Detector self-test: open `/tests/detector.html`.
+- Detector self-test: open `/tests/detector.html`. Chorus simulation (which
+  pattern each setting should produce): `/tests/chorus-sim.html`.
+- Chorister timing logic lives in [chorister.js](chorister.js). The coupling
+  rules are in [rules.js](rules.js).
 - The log format is in [PROTOCOL.md](PROTOCOL.md). Merge logs with
   `python3 tools/merge.py a.jsonl b.jsonl`.
 - Test logs go in [runs/](runs/), one folder per dated run.

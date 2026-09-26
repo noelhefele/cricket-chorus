@@ -1,12 +1,13 @@
 // UI, roles, and the event log. See PROTOCOL.md for the log format.
 import { AudioEngine, chirpDurationMs } from './audio.js';
 import { respond } from './rules.js';
+import { Chorister } from './chorister.js';
 
 const PROTOCOL_VERSION = 1;
 // Bump APP_VERSION when behaviour changes (detector, rules, timing).
 // COMMIT and BUILT are filled in by the deploy workflow; locally they stay
 // as placeholders and the app reports "dev".
-const APP_VERSION = '0.1.0';
+const APP_VERSION = '0.2.0';
 const COMMIT = '__COMMIT__';
 const BUILT = '__BUILT__';
 const APP = {
@@ -27,6 +28,10 @@ const DEFAULTS = {
   threshold_db: -45,
   filter_q: 6,
   rule: 'fixed_delay',
+  jitter_pct: 5,
+  coupling: 'reset',
+  reset_delay_ms: 2000,
+  effector_ms: 200,
 };
 
 const PARAM_UI = [
@@ -37,9 +42,14 @@ const PARAM_UI = [
   ['pulse_period_ms', 'Pulse spacing (start to start)', 'ms', 5, 500, 1],
   ['volume', 'Volume', '0–1', 0, 1, 0.05],
   ['Timing'],
-  ['call_period_ms', 'Emitter: time between chirps', 'ms', 200, 60000, 50],
+  ['call_period_ms', 'Emitter & Chorister: time between chirps', 'ms', 200, 60000, 50],
   ['response_delay_ms', 'Responder: wait before answering', 'ms', 0, 10000, 10],
   ['refractory_ms', 'Deaf after chirping (refractory)', 'ms', 0, 10000, 10],
+  ['Chorister'],
+  ['coupling', 'When it hears a neighbour', 'choice', ['reset', 'none']],
+  ['reset_delay_ms', 'Reset: next chirp this long after hearing', 'ms', 0, 60000, 10],
+  ['jitter_pct', 'Random wobble in its rhythm', '±%', 0, 50, 1],
+  ['effector_ms', 'Effector window: chirp locked in this early', 'ms', 20, 2000, 10],
   ['Detection'],
   ['threshold_db', 'Threshold', 'dBFS', -100, 0, 1],
   ['filter_q', 'Filter sharpness (Q)', '', 1, 30, 0.5],
@@ -48,6 +58,7 @@ const PARAM_UI = [
 const ROLE_HELP = {
   emitter: 'Chirps on a timer and logs everything it hears.',
   responder: 'Listens. When it hears a chirp, it waits, then chirps back.',
+  chorister: 'Chirps on its own rhythm and adjusts it when it hears others. Put every phone on Chorister.',
   calibrate: 'Chirps 6 times to itself to measure this phone’s built-in delay. Keep quiet.',
 };
 
@@ -75,6 +86,8 @@ const S = {
   lastEmitAudio: null,
   nDetect: 0,
   nEmit: 0,
+  nReset: 0,
+  chorus: null,
   calibration: store.get('calibration', null),
 };
 
@@ -163,6 +176,19 @@ function onDetect(m) {
     pending: S.pending,
   });
   if (S.role === 'calibrate' && S.cal) S.cal.dets.push(m);
+  if (S.role === 'chorister' && S.chorus) {
+    const r = S.chorus.hear({ seq: det.seq, t_audio: m.tAudio, level_db: m.level });
+    if (r) {
+      S.nReset++;
+      log('reset', engine.now, {
+        in_response_to: det.seq,
+        coupling: S.params.coupling,
+        previous_next_t_audio: round(r.from, 6),
+        next_t_audio: round(r.to, 6),
+        interval_ms: round(r.interval_ms, 1),
+      });
+    }
+  }
   if (S.role === 'responder') {
     const delay = respond({ seq: det.seq, t_audio: m.tAudio, level_db: m.level },
       { pending: S.pending, lastEmitAudio: S.lastEmitAudio }, S.params);
@@ -244,6 +270,19 @@ function renderCalibration() {
     : 'Not calibrated yet: run Calibrate once on this phone.';
 }
 
+// Chorister: its own jittered rhythm, adjusted by the coupling rule when it
+// hears a neighbour (chorister.js, rules.js). A call is locked in once it is
+// inside the effector window.
+function startChorister() {
+  S.chorus = new Chorister(S.params, engine.now);
+  const tick = () => {
+    const c = S.chorus.due(engine.now);
+    if (c) call(c.t, 'timer', { interval_ms: c.interval_ms == null ? null : round(c.interval_ms, 1) });
+    later(10, tick);
+  };
+  tick();
+}
+
 // ---------- run control ----------
 async function start() {
   const btn = $('start');
@@ -259,11 +298,12 @@ async function start() {
   btn.disabled = false;
   S.running = true;
   S.run = Math.random().toString(36).slice(2, 8);
-  S.nDetect = S.nEmit = 0;
+  S.nDetect = S.nEmit = S.nReset = 0;
   S.pending = false;
   logConfig();
   keepAwake();
   if (S.role === 'emitter') startEmitter();
+  else if (S.role === 'chorister') startChorister();
   else if (S.role === 'calibrate') startCalibration();
   renderRunning();
 }
@@ -273,10 +313,11 @@ function stop() {
   for (const id of S.timers) clearTimeout(id);
   S.timers.clear();
   engine.stopAll();
-  log('run_end', engine.now, { n_detect: S.nDetect, n_emit: S.nEmit });
+  log('run_end', engine.now, { n_detect: S.nDetect, n_emit: S.nEmit, n_reset: S.nReset });
   S.running = false;
   S.pending = false;
   S.cal = null;
+  S.chorus = null;
   store.set('log', S.lines); store.set('seq', S.seq);
   releaseWake();
   renderRunning();
@@ -341,6 +382,7 @@ function updateStatus() {
   if (S.running) {
     if (S.role === 'emitter') s = `Calling · ${S.nEmit} chirps · heard ${S.nDetect}`;
     else if (S.role === 'responder') s = `Listening · heard ${S.nDetect} · answered ${S.nEmit}`;
+    else if (S.role === 'chorister') s = `Chorusing · ${S.nEmit} chirps · heard ${S.nDetect} · resets ${S.nReset}`;
     else s = 'Calibrating…';
   }
   $('status').textContent = s;
@@ -355,7 +397,14 @@ function renderParams() {
     }
     const [key, label, unit, min, max, step] = row;
     const wrap = document.createElement('label'); wrap.className = 'param';
-    wrap.innerHTML = `<span>${label}<small>${unit} · default ${DEFAULTS[key]}</small></span>`;
+    wrap.innerHTML = `<span>${label}<small>${unit === 'choice' ? '' : unit + ' · '}default ${DEFAULTS[key]}</small></span>`;
+    if (unit === 'choice') {
+      const sel = document.createElement('select');
+      for (const o of min) sel.append(new Option(o, o, false, o === S.params[key]));
+      sel.addEventListener('change', () => setParam(key, sel.value));
+      wrap.append(sel); box.append(wrap);
+      continue;
+    }
     const inp = document.createElement('input');
     Object.assign(inp, { type: 'number', inputMode: 'decimal', min, max, step, value: S.params[key] });
     inp.addEventListener('change', () => {
@@ -382,7 +431,10 @@ function checkTiming() {
   const chirp = chirpDurationMs(S.params);
   const msgs = [];
   if (S.params.refractory_ms < chirp + 60) msgs.push(`Refractory (${S.params.refractory_ms} ms) is shorter than the chirp plus phone delay (~${chirp + 60} ms): the phone may hear itself.`);
-  if (S.params.response_delay_ms <= S.params.refractory_ms) msgs.push('The emitter will not hear the reply: make the response delay longer than the refractory period.');
+  const cal = S.calibration && S.calibration.median_ms;
+  if (S.role === 'chorister' && cal && S.params.effector_ms < cal + 20) msgs.push(`Effector window (${S.params.effector_ms} ms) is not much longer than this phone's delay (${cal} ms): synchrony may not hold.`);
+  if (S.role === 'chorister' && S.params.coupling === 'reset' && S.params.reset_delay_ms > S.params.call_period_ms) msgs.push('Reset delay is longer than the rhythm: the faster phone will silence the slower one.');
+  if (S.role === 'responder' && S.params.response_delay_ms <= S.params.refractory_ms) msgs.push('The emitter will not hear the reply: make the response delay longer than the refractory period.');
   if (msgs.length) showBanner(msgs.join(' ')); else hideBanner();
 }
 
@@ -438,6 +490,7 @@ function fmtLine(e) {
   else if (e.event === 'emit') d = e.cause + (e.delay_ms != null ? ` after ${e.delay_ms} ms` : '');
   else if (e.event === 'config') d = `${e.role} · thr ${e.params.threshold_db} dB`;
   else if (e.event === 'calibration') d = `median ${e.median_ms} ms (${e.n_ok}/${e.n_total})`;
+  else if (e.event === 'reset') d = `next chirp in ${Math.round(e.interval_ms)} ms`;
   else if (e.event === 'run_end') d = `${e.n_emit} chirps, ${e.n_detect} heard`;
   else if (e.event.startsWith('refractory')) return null;
   return `${time}  ${e.event.padEnd(11)} ${d}`;
@@ -511,7 +564,7 @@ $('device').addEventListener('change', () => {
   store.set('device', S.device);
 });
 for (const b of document.querySelectorAll('.roles button')) {
-  b.addEventListener('click', () => { if (!S.running) { S.role = b.dataset.role; store.set('role', S.role); renderRoles(); } });
+  b.addEventListener('click', () => { if (!S.running) { S.role = b.dataset.role; store.set('role', S.role); renderRoles(); checkTiming(); } });
 }
 $('start').addEventListener('click', () => (S.running ? stop() : start()));
 $('autothr').addEventListener('click', autoThreshold);
@@ -521,6 +574,7 @@ $('clear').addEventListener('click', clearLog);
 $('reset').addEventListener('click', () => {
   S.params = { ...DEFAULTS };
   store.set('params', S.params);
+  if (S.chorus) S.chorus.params = S.params;
   if (engine.ctx) engine.setParams(S.params);
   if (S.running) logConfig();
   renderParams(); renderMeterThreshold(); checkTiming();

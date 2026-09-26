@@ -9,10 +9,10 @@ line per event, UTF-8, `\n` line endings. File name:
 | Field | Type | Meaning |
 |---|---|---|
 | `v` | int | Protocol version (`1`). |
-| `event` | string | `config`, `detect`, `emit`, `refractory_start`, `refractory_end`, `calibration`, `run_end`. |
+| `event` | string | `config`, `detect`, `emit`, `reset`, `refractory_start`, `refractory_end`, `calibration`, `run_end`. |
 | `device` | string | Device name, set on screen. Defaults to a random `dev-xxxx` that the phone remembers. |
 | `run` | string | Random id for one Start→Stop run on one device. |
-| `role` | string | `emitter`, `responder` or `calibrate`. |
+| `role` | string | `emitter`, `responder`, `chorister` or `calibrate`. |
 | `seq` | int | Per-device counter, increasing across runs. |
 | `t_audio` | number | **Seconds on the device's audio clock** (`AudioContext.currentTime` timeline) at which the event actually happens. This is the precise clock within one device. For `detect` it is the detected onset. For `emit` it is the scheduled start of the sound. |
 | `t_mono` | number | Milliseconds, `performance.now()` timeline (monotonic, high resolution), converted from `t_audio`. |
@@ -34,10 +34,20 @@ are written when their time arrives.
   this detection
 
 **`emit`**
-- `cause`: `timer` (emitter), `response` (responder) or `calibration`
+- `cause`: `timer` (emitter or chorister), `response` (responder) or `calibration`
 - `in_response_to`: `seq` of the triggering `detect`, or `null`
 - `decided_t_audio`: audio time when the call was decided or scheduled
 - `delay_ms`: the rule's chosen delay, for `cause = response`
+- `interval_ms` (chorister): the jittered interval that produced this
+  call. It is either a free period, or a reset delay counted from a detection.
+  `null` for the first call.
+
+**`reset`** (chorister): the coupling rule moved the next call
+- `in_response_to`: `seq` of the `detect` that caused it
+- `coupling`: rule name
+- `previous_next_t_audio`, `next_t_audio`: the next call time before and
+  after the reset
+- `interval_ms`: jittered delay from the detected onset to the new next call
 
 **`refractory_start` / `refractory_end`**
 - `duration_ms`: the refractory period
@@ -59,7 +69,7 @@ setting changes during a run.
 - `level_db`: median detected level of the phone's own chirp
 
 **`run_end`**
-- `n_detect`, `n_emit`
+- `n_detect`, `n_emit`, `n_reset`
 
 ## `params`
 
@@ -70,12 +80,16 @@ setting changes during a run.
 | `pulse_ms` | ms | 20 |
 | `pulse_period_ms` | ms (start to start) | 40 |
 | `volume` | 0–1 | 1.0 |
-| `call_period_ms` | ms (emitter timer) | 2000 |
+| `call_period_ms` | ms (emitter timer, chorister free period) | 2000 |
 | `response_delay_ms` | ms | 400 |
 | `refractory_ms` | ms | 250 |
 | `threshold_db` | dBFS | −45 |
 | `filter_q` | — | 6 |
-| `rule` | name | `fixed_delay` |
+| `rule` | name (responder) | `fixed_delay` |
+| `coupling` | `reset` or `none` (chorister) | `reset` |
+| `reset_delay_ms` | ms, from detected onset to next call | 2000 |
+| `jitter_pct` | ± % of each interval | 5 |
+| `effector_ms` | ms a call is locked in before it sounds | 200 |
 
 ## Merging logs from several phones
 
