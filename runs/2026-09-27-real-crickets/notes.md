@@ -8,6 +8,12 @@
 
 > We have leader following dynamics
 
+**Species:** *Teleogryllus oceanicus* (Pacific field cricket), from a large
+lab colony that Alex's lab keeps. No log was shared from this first session.
+
+Alex's lab is planning a lab meeting to decide how to shape the settings, and
+they're calling it the "Doolittle project".
+
 This is the first real-world run, and the first time the app has run on
 iOS. The detector picks up real cricket calls, and the phone answers them.
 
@@ -15,7 +21,8 @@ iOS. The detector picks up real cricket calls, and the phone answers them.
 
 - [ ] Alex's log file (Share log). It records the role, all settings, the
       app version and every detection and call.
-- [ ] Species, and roughly how many crickets could be heard
+- [x] Species: *T. oceanicus* (lab colony)
+- [ ] Roughly how many crickets could be heard
 - [ ] Indoors or outdoors, distance from phone to crickets
 - [ ] **Temperature.** Cricket chirp rate depends strongly on temperature,
       so it's needed to compare runs.
